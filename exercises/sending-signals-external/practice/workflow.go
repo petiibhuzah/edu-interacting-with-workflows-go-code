@@ -15,6 +15,14 @@ import (
 // `FulfillOrderSignal` with `Fulfilled: true`. This is the Signal that
 // `FulfillOrderWorkflow` will send to `PizzaWorkflow`.
 
+type FulfillOrderSignal struct {
+	Fulfilled bool
+}
+
+var signal = FulfillOrderSignal{
+	Fulfilled: true,
+}
+
 func PizzaWorkflow(ctx workflow.Context, order PizzaOrder) (OrderConfirmation, error) {
 	retrypolicy := &temporal.RetryPolicy{
 		MaximumInterval: time.Second * 10,
@@ -49,7 +57,8 @@ func PizzaWorkflow(ctx workflow.Context, order PizzaOrder) (OrderConfirmation, e
 	// TODO Part B: Add a call to `workflow.GetSignalChannel(ctx, "fulfill-order-signal")`
 	// and assign it to a variable like `signalChan`. After that, add
 	// `signalChan.Receive(ctx, &signal)` on the following line.
-
+	signalChan := workflow.GetSignalChannel(ctx, "fulfill-order-signal")
+	signalChan.Receive(ctx, &signal)
 	if signal.Fulfilled == true {
 		bill := Bill{
 			CustomerID:  order.Customer.CustomerID,
@@ -96,6 +105,10 @@ func FulfillOrderWorkflow(ctx workflow.Context, order PizzaOrder) (string, error
 
 	// TODO Part C: call `workflow.SignalExternalWorkflow()`
 	// to send a Signal to your `PizzaWorkflow`.
+	err = workflow.SignalExternalWorkflow(ctx, "pizza-workflow-order-Z1238", "", "fulfill-order-signal", signal).Get(ctx, nil)
+	if err != nil {
+		logger.Error("Error sending the Signal", "Error", err)
+	}
 
 	return "orderFulfilled", nil
 }

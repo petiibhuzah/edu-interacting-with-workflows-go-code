@@ -23,6 +23,18 @@ func Workflow(ctx workflow.Context, input string) (string, error) {
 
 	// TODO Part A: Add a Query Handler that returns a variable called `currentState`
 	// and update the `currentState`` variable as your Workflow progresses.
+	currentState := "started"
+	queryType := "current_state"
+
+	err := workflow.SetQueryHandler(ctx, queryType, func() (string, error) {
+		return currentState, nil
+	})
+
+	if err != nil {
+		currentState = "failed to register query handler"
+		return "", err
+	}
+	currentState = "waiting for signal"
 
 	var signal FulfillOrderSignal
 	var result string
@@ -37,6 +49,7 @@ func Workflow(ctx workflow.Context, input string) (string, error) {
 		}
 		// TODO Part E: Update the `currentState` variable after the Workflow has
 		// has completed, so that you can query it later.
+		currentState = "workflow completed"
 		logger.Info("Signal workflow completed.", "result", result)
 	}
 

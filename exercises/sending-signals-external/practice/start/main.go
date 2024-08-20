@@ -42,6 +42,11 @@ func main() {
 	// `FulfillOrderWorkflow`. You can use the call that spawns the `PizzaWorkflow`
 	// and the `signalFulfilledOptions` block above as a reference.
 	// Don't forget to capture the Workflow Execution and any errors in different variables.
+	wes, signalErr := c.ExecuteWorkflow(context.Background(), signalFulfilledOptions, pizza.FulfillOrderWorkflow, order)
+	if signalErr != nil {
+		log.Fatalln("Unable to execute workflow", signalErr)
+	}
+	log.Println("Started workflow", "WorkflowID", wes.GetID(), "RunID", wes.GetRunID())
 
 	var result pizza.OrderConfirmation
 	err = we.Get(context.Background(), &result)
